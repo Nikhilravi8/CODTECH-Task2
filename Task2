@@ -1,0 +1,85 @@
+import socket
+import nmap
+import requests
+
+# Port Scanner using Nmap
+def scan_ports(target):
+    print(f"Scanning open ports on {target}...")
+    nm = nmap.PortScanner()
+    nm.scan(target, '1-1024')  # Scanning ports from 1 to 1024
+    open_ports = []
+
+    for host in nm.all_hosts():
+        for proto in nm[host].all_protocols():
+            ports = nm[host][proto].keys()
+            for port in ports:
+                if nm[host][proto][port]['state'] == 'open':
+                    open_ports.append(port)
+                    print(f"Port {port} is open on {target}")
+
+    if not open_ports:
+        print("No open ports found!")
+    return open_ports
+
+
+# Checking HTTP Headers for outdated software versions or sensitive info
+def check_http_headers(url):
+    try:
+        response = requests.get(url)
+        headers = response.headers
+
+        print("\nHTTP Headers Analysis:")
+        for header, value in headers.items():
+            print(f"{header}: {value}")
+
+        # Basic checks for outdated software info
+        if 'Server' in headers:
+            print(f"\nServer info: {headers['Server']}")
+            if 'nginx' in headers['Server'] or 'Apache' in headers['Server']:
+                print("Check if the server version is up to date!")
+
+        if 'X-Powered-By' in headers:
+            print(f"X-Powered-By: {headers['X-Powered-By']}")
+            print("The server is revealing sensitive info through the X-Powered-By header!")
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to fetch headers for {url}: {str(e)}")
+
+# Detect basic misconfigurations
+def detect_misconfigurations(url):
+    print("\nChecking for basic security misconfigurations...")
+    headers_to_check = ['Server', 'X-Powered-By', 'Strict-Transport-Security', 'Content-Security-Policy']
+
+    try:
+        response = requests.get(url)
+        headers = response.headers
+        # Corrected line below
+        missing_headers = [header for header in headers_to_check if header not in headers]
+
+        if missing_headers:
+            print(f"Missing security headers: {missing_headers}")
+        else:
+            print("Basic security headers are in place.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error checking misconfigurations for {url}: {str(e)}")
+
+# Main function to execute the scanning
+def vulnerability_scan(target):
+    print(f"Starting vulnerability scan on {target}...\n")
+
+    # Step 1: Scan open ports
+    open_ports = scan_ports(target)
+
+    # Step 2: Check for outdated software versions and misconfigurations via HTTP headers (only if it's a web URL)
+    if target.startswith("http://") or target.startswith("https://"):
+        check_http_headers(target)
+        detect_misconfigurations(target)
+    else:
+        print("\nSkipping HTTP checks as the target is not a web URL.")
+
+if __name__ == "__main__":
+    # Example usage:
+    # For website: 'http://example.com'
+    # For IP/network: '192.168.1.1'
+    target = input("Enter target URL or IP address: ")
+    vulnerability_scan(target)
