@@ -1,3 +1,13 @@
+Name: NIKHIL THAPA
+
+Company: CODTECH IT SOLUTIONS
+
+ID: CT6WDS1516
+
+Domain: CYBER SECURITY&ETHICAL HACKING
+
+Duration:AUGUST to SEPTEMBER 2024.
+
 Overview of the Project
 
 Project: Simple Vulnerability Scanner
